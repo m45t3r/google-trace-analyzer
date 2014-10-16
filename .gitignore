@@ -1,3 +1,4 @@
 *.so
 *.sqlite*
 *.db
+*.csv

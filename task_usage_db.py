@@ -5,7 +5,7 @@ import os
 
 PART_START = 0
 PART_END = 10
-TASK_USAGE_DIR = 'task_usage/'
+TASK_USAGE_DIR = '../task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
 RESULT_FILE = DB_FILENAME.split('.')[0] + '-summary.csv'
 
