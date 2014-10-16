@@ -77,7 +77,7 @@ def create_data_summary(db_filename, result_file):
             cur.execute(query)
             print("Processing distinct tasks")
 
-            fields = "job_id,task_index,MIN(start_time),MAX(end_time),COUNT(*),AVG(cpu_rate),AVG(assigned_memory_usage),AVG(disk_io_time),STDEV(cpu_rate),STDEV(assigned_memory_usage),STDEV(disk_io_time),VARIANCE(cpu_rate),VARIANCE(assigned_memory_usage),VARIANCE(disk_io_time),MEDIAN(cpu_rate),MEDIAN(assigned_memory_usage),MEDIAN(disk_io_time),MAX(maximum_cpu_rate),MAX(maximum_disk_io_time),MAX(assigned_memory_usage)"
+            fields = "job_id,task_index,MIN(start_time),MAX(end_time),MAX(end_time) - MIN(start_time),COUNT(*),AVG(cpu_rate),AVG(assigned_memory_usage),AVG(disk_io_time),STDEV(cpu_rate),STDEV(assigned_memory_usage),STDEV(disk_io_time),VARIANCE(cpu_rate),VARIANCE(assigned_memory_usage),VARIANCE(disk_io_time),MEDIAN(cpu_rate),MEDIAN(assigned_memory_usage),MEDIAN(disk_io_time),MAX(maximum_cpu_rate),MAX(maximum_disk_io_time),MAX(assigned_memory_usage)"
             # Print header to resultin CSV file.
             csv_writer.writerow(fields.split(','))
 
