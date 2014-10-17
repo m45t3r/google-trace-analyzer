@@ -63,31 +63,30 @@ def create_task_usage_db(db_filename, task_usage_dir, start, end):
 
 def create_data_summary(db_filename, result_file):
     with sqlite3.connect(db_filename) as conn:
-        with open(result_file, 'w') as f:
-            csv_writer = csv.writer(f)
+        # Necessary to add STDEV and VARIANCE support to sqlite
+        # See "extension-functions.c" (https://www.sqlite.org/contrib) for details.
+        conn.enable_load_extension(True)
+        conn.load_extension('./libsqlitefunctions.so')
+        
+        cur = conn.cursor()
 
-            # Necessary to add STDEV and VARIANCE support to sqlite
-            # See "extension-functions.c" (https://www.sqlite.org/contrib) for details.
-            conn.enable_load_extension(True)
-            conn.load_extension('./libsqlitefunctions.so')
-            
-            cur = conn.cursor()
+        # Create a sqlite database to hold task_usage data
+        query = "CREATE TABLE IF NOT EXISTS task_usage_summary (job_id INTEGER, task_index INTEGER, start_time FLOAT, end_time FLOAT, task_duration FLOAT, number_of_entries INTEGER, avg_cpu_rate FLOAT, avg_memory_usage FLOAT, avg_disk_io_time FLOAT, stdev_cpu_rate FLOAT, stdev_memory_usage FLOAT, stdev_disk_io_time FLOAT, var_cpu_rate FLOAT, var_memory_usage FLOAT, var_disk_io_time FLOAT, median_cpu_rate FLOAT, median_memory_usage FLOAT, median_disk_io_time FLOAT, max_cpu_time FLOAT, max_memory_usage FLOAT, max_disk_io_time FLOAT, PRIMARY KEY (job_id, task_index))"
+        cur.execute(query)
 
-            query = "SELECT DISTINCT job_id,task_index FROM task_usage"
-            cur.execute(query)
-            print("Processing distinct tasks")
+        query = "SELECT DISTINCT job_id,task_index FROM task_usage"
+        cur.execute(query)
+        print("Processing distinct tasks")
 
-            fields = "job_id,task_index,MIN(start_time),MAX(end_time),SUM(end_time - start_time),COUNT(*),AVG(cpu_rate),AVG(assigned_memory_usage),AVG(disk_io_time),STDEV(cpu_rate),STDEV(assigned_memory_usage),STDEV(disk_io_time),VARIANCE(cpu_rate),VARIANCE(assigned_memory_usage),VARIANCE(disk_io_time),MEDIAN(cpu_rate),MEDIAN(assigned_memory_usage),MEDIAN(disk_io_time),MAX(maximum_cpu_rate),MAX(maximum_disk_io_time),MAX(assigned_memory_usage)"
-            # Print header to resultin CSV file.
-            csv_writer.writerow(fields.split(','))
+        for result in cur.fetchall():
+            print("Processing job_id={} and task_index={}".format(*result))
+            query = "SELECT job_id, task_index, MIN(start_time), MAX(end_time), SUM(end_time - start_time), COUNT(*), AVG(cpu_rate), AVG(assigned_memory_usage), AVG(disk_io_time), STDEV(cpu_rate), STDEV(assigned_memory_usage), STDEV(disk_io_time), VARIANCE(cpu_rate), VARIANCE(assigned_memory_usage), VARIANCE(disk_io_time), MEDIAN(cpu_rate), MEDIAN(assigned_memory_usage), MEDIAN(disk_io_time), MAX(maximum_cpu_rate), MAX(assigned_memory_usage), MAX(maximum_disk_io_time)  from task_usage WHERE job_id = ? AND task_index = ?"
+            cur.execute(query, result)
+            res = cur.fetchone()
+            query = "INSERT INTO task_usage_summary (job_id, task_index, start_time, end_time, task_duration, number_of_entries, avg_cpu_rate, avg_memory_usage, avg_disk_io_time, stdev_cpu_rate, stdev_memory_usage, stdev_disk_io_time, var_cpu_rate, var_memory_usage, var_disk_io_time, median_cpu_rate, median_memory_usage, median_disk_io_time, max_cpu_time, max_memory_usage, max_disk_io_time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            cur.execute(query, res)
 
-            for result in cur.fetchall():
-                print("Processing job_id={} and task_index={}".format(*result))
-                query = "SELECT {} from task_usage WHERE job_id = ? AND task_index = ?".format(fields)
-                cur.execute(query, result)
-                csv_writer.writerow(cur.fetchone())
-
-            print("Done")
+    print("Done")
 
 if __name__ == '__main__':
     #create_task_usage_db(DB_FILENAME, TASK_USAGE_DIR, PART_START, PART_END)
