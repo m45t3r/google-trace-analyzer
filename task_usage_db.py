@@ -6,7 +6,7 @@ import sqlite3
 import os
 
 PART_START = 0
-PART_END = 10
+PART_END = 500
 TASK_USAGE_DIR = '../task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
 RESULT_FILE = DB_FILENAME.split('.')[0] + '-summary.csv'
@@ -71,7 +71,7 @@ def create_data_summary(db_filename, result_file):
         cur = conn.cursor()
 
         # Create a sqlite database to hold task_usage data
-        query = "CREATE TABLE IF NOT EXISTS task_usage_summary (job_id INTEGER, task_index INTEGER, start_time FLOAT, end_time FLOAT, task_duration FLOAT, number_of_entries INTEGER, avg_cpu_rate FLOAT, avg_memory_usage FLOAT, avg_disk_io_time FLOAT, stdev_cpu_rate FLOAT, stdev_memory_usage FLOAT, stdev_disk_io_time FLOAT, var_cpu_rate FLOAT, var_memory_usage FLOAT, var_disk_io_time FLOAT, median_cpu_rate FLOAT, median_memory_usage FLOAT, median_disk_io_time FLOAT, max_cpu_time FLOAT, max_memory_usage FLOAT, max_disk_io_time FLOAT, PRIMARY KEY (job_id, task_index))"
+        query = "CREATE TABLE IF NOT EXISTS task_usage_summary (job_id INTEGER, task_index INTEGER, start_time FLOAT, end_time FLOAT, task_duration FLOAT, number_of_entries INTEGER, avg_cpu_rate FLOAT, avg_memory_usage FLOAT, avg_disk_io_time FLOAT, avg_disk_space_usage FLOAT, stdev_cpu_rate FLOAT, stdev_memory_usage FLOAT, stdev_disk_io_time FLOAT, stdev_disk_space_usage FLOAT, var_cpu_rate FLOAT, var_memory_usage FLOAT, var_disk_io_time FLOAT, var_disk_usage_space FLOAT, median_cpu_rate FLOAT, median_memory_usage FLOAT, median_disk_io_time FLOAT, media_disk_space_usage FLOAT, max_cpu_time FLOAT, max_memory_usage FLOAT, max_disk_io_time FLOAT, max_disk_usage_space FLOAT, PRIMARY KEY (job_id, task_index))"
         cur.execute(query)
 
         query = "SELECT DISTINCT job_id,task_index FROM task_usage"
@@ -80,14 +80,14 @@ def create_data_summary(db_filename, result_file):
 
         for result in cur.fetchall():
             print("Processing job_id={} and task_index={}".format(*result))
-            query = "SELECT job_id, task_index, MIN(start_time), MAX(end_time), SUM(end_time - start_time), COUNT(*), AVG(cpu_rate), AVG(assigned_memory_usage), AVG(disk_io_time), STDEV(cpu_rate), STDEV(assigned_memory_usage), STDEV(disk_io_time), VARIANCE(cpu_rate), VARIANCE(assigned_memory_usage), VARIANCE(disk_io_time), MEDIAN(cpu_rate), MEDIAN(assigned_memory_usage), MEDIAN(disk_io_time), MAX(maximum_cpu_rate), MAX(assigned_memory_usage), MAX(maximum_disk_io_time)  from task_usage WHERE job_id = ? AND task_index = ?"
+            query = "SELECT job_id, task_index, MIN(start_time), MAX(end_time), SUM(end_time - start_time), COUNT(*), AVG(cpu_rate), AVG(assigned_memory_usage), AVG(disk_io_time), AVG(local_disk_usage_space), STDEV(cpu_rate), STDEV(assigned_memory_usage), STDEV(disk_io_time), STDEV(local_disk_usage_space), VARIANCE(cpu_rate), VARIANCE(assigned_memory_usage), VARIANCE(disk_io_time), VARIANCE(local_disk_usage_space), MEDIAN(cpu_rate), MEDIAN(assigned_memory_usage), MEDIAN(disk_io_time), MEDIAN(local_disk_usage_space), MAX(maximum_cpu_rate), MAX(assigned_memory_usage), MAX(maximum_disk_io_time), MAX(local_disk_usage_space) from task_usage WHERE job_id = ? AND task_index = ?"
             cur.execute(query, result)
             res = cur.fetchone()
-            query = "INSERT INTO task_usage_summary (job_id, task_index, start_time, end_time, task_duration, number_of_entries, avg_cpu_rate, avg_memory_usage, avg_disk_io_time, stdev_cpu_rate, stdev_memory_usage, stdev_disk_io_time, var_cpu_rate, var_memory_usage, var_disk_io_time, median_cpu_rate, median_memory_usage, median_disk_io_time, max_cpu_time, max_memory_usage, max_disk_io_time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            query = "INSERT INTO task_usage_summary (job_id, task_index, start_time, end_time, task_duration, number_of_entries, avg_cpu_rate, avg_memory_usage, avg_disk_io_time, stdev_cpu_rate, stdev_memory_usage, stdev_disk_io_time, var_cpu_rate, var_memory_usage, var_disk_io_time, median_cpu_rate, median_memory_usage, median_disk_io_time, max_cpu_time, max_memory_usage, max_disk_io_time) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             cur.execute(query, res)
 
     print("Done")
 
 if __name__ == '__main__':
-    #create_task_usage_db(DB_FILENAME, TASK_USAGE_DIR, PART_START, PART_END)
+    create_task_usage_db(DB_FILENAME, TASK_USAGE_DIR, PART_START, PART_END)
     create_data_summary(DB_FILENAME, RESULT_FILE)
