@@ -6,7 +6,7 @@ import sqlite3
 import os
 
 PART_START = 0
-PART_END = 10
+PART_END = 49
 TASK_USAGE_DIR = '../task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
 SUMMARY_FILE = DB_FILENAME.split('.')[0] + '-summary.csv'
@@ -121,4 +121,13 @@ if __name__ == '__main__':
     with TaskUsageUtils(DB_FILENAME) as task_usage:
         #task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
         #task_usage.create_data_summary()
-        task_usage.export_trace(5456984290, 429)
+        task_usage.export_trace(4665897416, 72)
+        task_usage.export_trace(4665903885, 426)
+        task_usage.export_trace(5905891785, 2)
+        task_usage.export_trace(6251414911, 139)
+        task_usage.export_trace(6251414911, 1134)
+        task_usage.export_trace(6251779174, 456)
+        task_usage.export_trace(6251982423, 393)
+        task_usage.export_trace(6252156189, 1727)
+        task_usage.export_trace(6252499520, 99)
+        task_usage.export_trace(6253077973, 27)
