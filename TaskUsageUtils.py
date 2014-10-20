@@ -6,7 +6,7 @@ import sqlite3
 import os
 
 PART_START = 0
-PART_END = 49
+PART_END = 10
 TASK_USAGE_DIR = '../task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
 SUMMARY_FILE = DB_FILENAME.split('.')[0] + '-summary.csv'
@@ -92,6 +92,21 @@ class TaskUsageUtils(object):
 
         print("Done")
 
+    def export_trace(self, job_id, task_index, limit_entries = None):
+        trace_filename = 'task_usage-job_id_{}-task_index_{}_'.format(job_id, task_index)
+        extension = '.txt'
+
+        print("Exporting job_id={} and task_index={} to pyCloudSim's .txt file".format(job_id, task_index))
+        with open(trace_filename + 'cpu' + extension, 'w') as cpu, open(trace_filename + 'mem' + extension, 'w') as mem, open(trace_filename + 'disk' + extension, 'w') as disk:
+            self.cur.execute("SELECT cpu_rate, assigned_memory_usage, disk_io_time FROM task_usage WHERE job_id = ? AND task_index = ?", (job_id, task_index))
+            for row in self.cur.fetchall():
+                # pyCloudSim uses % int, while Google's traces use a normalized
+                # float value, so we fix it here
+                cpu.write(str(int(row[0] * 100)) + '\n')
+                mem.write(str(int(row[1] * 100)) + '\n')
+                disk.write(str(int(row[2] * 100)) + '\n')
+        print("Done")
+
     def close_con(self):
         self.conn.commit()
         self.cur.close()
@@ -104,5 +119,6 @@ class TaskUsageUtils(object):
 
 if __name__ == '__main__':
     with TaskUsageUtils(DB_FILENAME) as task_usage:
-        task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
-        task_usage.create_data_summary()
+        #task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
+        #task_usage.create_data_summary()
+        task_usage.export_trace(5456984290, 429)
