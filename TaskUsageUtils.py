@@ -6,9 +6,10 @@ import sqlite3
 import os
 
 PART_START = 0
-PART_END = 49
+PART_END = 10
 TASK_USAGE_DIR = '../task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
+EXPORT_DIR = './traces'
 SUMMARY_FILE = DB_FILENAME.split('.')[0] + '-summary.csv'
 
 
@@ -92,13 +93,21 @@ class TaskUsageUtils(object):
 
         print("Done")
 
-    def export_trace(self, job_id, task_index, limit_entries = None):
+    def export_trace(self, job_id, task_index, output_dir='', limit_entries = None):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
         trace_filename = 'task_usage-job_id_{}-task_index_{}_'.format(job_id, task_index)
+        trace_filename = os.path.join(output_dir, trace_filename)
         extension = '.txt'
 
         print("Exporting job_id={} and task_index={} to pyCloudSim's .txt file".format(job_id, task_index))
-        with open(trace_filename + 'cpu' + extension, 'w') as cpu, open(trace_filename + 'mem' + extension, 'w') as mem, open(trace_filename + 'disk' + extension, 'w') as disk:
+        if limit_entries:
+            self.cur.execute("SELECT cpu_rate, assigned_memory_usage, disk_io_time FROM task_usage WHERE job_id = ? AND task_index = ? LIMIT ?", (job_id, task_index, limit_entries))
+        else:
             self.cur.execute("SELECT cpu_rate, assigned_memory_usage, disk_io_time FROM task_usage WHERE job_id = ? AND task_index = ?", (job_id, task_index))
+
+        with open(trace_filename + 'cpu' + extension, 'w') as cpu, open(trace_filename + 'mem' + extension, 'w') as mem, open(trace_filename + 'disk' + extension, 'w') as disk:
             for row in self.cur.fetchall():
                 # pyCloudSim uses % int, while Google's traces use a normalized
                 # float value, so we fix it here
@@ -106,6 +115,14 @@ class TaskUsageUtils(object):
                 mem.write(str(int(row[1] * 100)) + '\n')
                 disk.write(str(int(row[2] * 100)) + '\n')
         print("Done")
+
+    def export_traces_from_csv_r(self, csv_file, output_dir='', limit_entries = None):
+        with open(csv_file, mode = 'rt') as f:
+            csv_reader = csv.reader(f, delimiter=',')
+            # Skip header
+            next(csv_reader)
+            for row in csv_reader:
+                self.export_trace(row[1], row[2], output_dir, limit_entries)
 
     def close_con(self):
         self.conn.commit()
@@ -121,13 +138,4 @@ if __name__ == '__main__':
     with TaskUsageUtils(DB_FILENAME) as task_usage:
         #task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
         #task_usage.create_data_summary()
-        task_usage.export_trace(4665897416, 72)
-        task_usage.export_trace(4665903885, 426)
-        task_usage.export_trace(5905891785, 2)
-        task_usage.export_trace(6251414911, 139)
-        task_usage.export_trace(6251414911, 1134)
-        task_usage.export_trace(6251779174, 456)
-        task_usage.export_trace(6251982423, 393)
-        task_usage.export_trace(6252156189, 1727)
-        task_usage.export_trace(6252499520, 99)
-        task_usage.export_trace(6253077973, 27)
+        task_usage.export_traces_from_csv_r('filtered-cpu-29-40.csv', EXPORT_DIR)
