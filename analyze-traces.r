@@ -72,8 +72,8 @@ mean_max_cpu_time <- mean(column, na.rm = T)
 min_max_cpu_time <- min(column, na.rm = T)
 max_max_cpu_time <- max(column, na.rm = T)
 
-data.cpu$job_id
-data.cpu$task_index
+#data.cpu$job_id
+#data.cpu$task_index
 
 column <- data.raw$avg_memory_usage
 plot_all(column, "mem-usage")

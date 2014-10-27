@@ -2,11 +2,12 @@
 
 import csv
 import gzip
+import subprocess
 import sqlite3
 import os
 
 PART_START = 0
-PART_END = 10
+PART_END = 499
 TASK_USAGE_DIR = '../task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
 EXPORT_DIR = './traces'
@@ -111,18 +112,39 @@ class TaskUsageUtils(object):
             for row in self.cur.fetchall():
                 # pyCloudSim uses % int, while Google's traces use a normalized
                 # float value, so we fix it here
-                cpu.write(str(int(row[0] * 100)) + '\n')
-                mem.write(str(int(row[1] * 100)) + '\n')
-                disk.write(str(int(row[2] * 100)) + '\n')
+                # If there is no value (empty string or ''), we set it to 0
+		try:
+	            cpu.write(str(int(row[0] * 100)) + '\n')
+                except ValueError:
+                    cpu.write("0\n")
+                try:
+                    mem.write(str(int(row[1] * 100)) + '\n')
+                except ValueError:
+                    mem.write("0\n")
+                try:
+                    disk.write(str(int(row[2] * 100)) + '\n')
+                except ValueError:
+                    disk.write("0\n")
         print("Done")
 
     def export_traces_from_csv_r(self, csv_file, output_dir='', limit_entries = None):
-        with open(csv_file, mode = 'rt') as f:
+        with open(csv_file, mode='rt') as f:
             csv_reader = csv.reader(f, delimiter=',')
             # Skip header
             next(csv_reader)
             for row in csv_reader:
                 self.export_trace(row[1], row[2], output_dir, limit_entries)
+
+    def export_summary_to_csv(self, summary_file):
+        print("Exporting task_usage_summary to .csv")
+        with open(summary_file, mode='w') as f:
+            subprocess.check_call(['sqlite3', '-csv', '-header', self.db_filename, "select * from task_usage_summary;"], stdout=f)
+        print("Done")
+
+    def analyze_summary_with_r(self, rscript_filename):
+        print("Running {} script".format(rscript_filename))
+        subprocess.check_call(['Rscript', rscript_filename])
+        print("Done")
 
     def close_con(self):
         self.conn.commit()
@@ -136,6 +158,8 @@ class TaskUsageUtils(object):
 
 if __name__ == '__main__':
     with TaskUsageUtils(DB_FILENAME) as task_usage:
-        #task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
-        #task_usage.create_data_summary()
+        task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
+        task_usage.create_data_summary()
+        task_usage.export_summary_to_csv(SUMMARY_FILE)
+        task_usage.analyze_summary_with_r('analyze-traces.r')
         task_usage.export_traces_from_csv_r('filtered-cpu-29-40.csv', EXPORT_DIR)
