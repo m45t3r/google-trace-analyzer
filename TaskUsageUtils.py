@@ -159,7 +159,7 @@ class TaskUsageUtils(object):
 
 
     def is_entry_valid(self, job_id, task_index):
-        self.cur.execute("select cpu_rate, assigned_memory_usage, disk_io_time from task_usage where job_id = ? and task_index = ?", (job_id, task_index))
+        self.cur.execute("SELECT cpu_rate, assigned_memory_usage, disk_io_time FROM task_usage where job_id = ? AND task_index = ?", (job_id, task_index))
 
         is_valid = True
         for row in self.cur.fetchall():
@@ -170,20 +170,21 @@ class TaskUsageUtils(object):
             except ValueError:
                 is_valid = False
                 print("Task with job_id {} and task_index {} contain invalid entries!".format(job_id, task_index), file=sys.stderr)
+                break
 
         return is_valid
 
     def return_valid_tasks(self, csv_file, result_file):
         print("Checking if tasks from {} are all valid".format(csv_file))
         with open(csv_file, mode='rt') as f, open(result_file, mode='w') as r:
-            r.write("job_id,task_index\n")
             csv_reader = csv.reader(f, delimiter=',')
-            # Skip header
-            next(csv_reader)
+            csv_writer = csv.writer(r, delimiter=',')
+            # Write header
+            csv_writer.writerow(next(csv_reader))
             for row in csv_reader:
                 is_valid = self.is_entry_valid(row[1], row[2])
                 if is_valid:
-                    r.write("{},{}\n".format(row[1], row[2]))
+                    csv_writer.writerow(row)
         print("Done")
 
 
@@ -214,6 +215,6 @@ if __name__ == '__main__':
         #task_usage.create_data_summary()
         #task_usage.export_summary_to_csv(SUMMARY_FILE)
         #task_usage.analyze_summary_with_r('analyze-traces.r')
-        #task_usage.return_valid_tasks('filtered-cpu-29-40.csv', 'valid-entries.csv')
-        #task_usage.export_traces_from_csv_r('filtered-cpu-29-40.csv', EXPORT_DIR)
+        task_usage.return_valid_tasks('filtered-cpu-29-40.csv', 'valid-entries.csv')
+        task_usage.export_traces_from_csv_r('valid-entries.csv', EXPORT_DIR)
         task_usage.create_trace_summary('filtered-cpu-29-40.csv')
