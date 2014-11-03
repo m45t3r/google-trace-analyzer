@@ -43,7 +43,7 @@ plot_all <- function(column, column_title) {
     #pie(column)
 }
 
-filename <- "task_usage-part-00000-of-00499-summary.csv"
+filename <- "task_usage-part-00000-of-00049-summary.csv"
 data.raw <- read.csv(filename)
 #colnames(data) <- c("job_id", "task_index", "start_time", "end_time", "task_duration", "number_of_entries", "a")
 #states <- unique(data$State)
