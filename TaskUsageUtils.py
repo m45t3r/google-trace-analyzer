@@ -141,6 +141,23 @@ class TaskUsageUtils(object):
             for row in csv_reader:
                 self.export_trace(row[1], row[2], output_dir, limit_entries)
 
+    def create_trace_summary(self, csv_file, prefix = 'all-'):
+        extension = '.txt'
+
+        with open(csv_file, mode='rt') as f:
+            with open(prefix + 'cpu' + extension, 'w') as cpu, open(prefix + 'mem' + extension, 'w') as mem, open(prefix + 'disk' + extension, 'w') as disk, open(prefix + 'net' + extension, 'w') as net:
+                csv_reader = csv.reader(f, delimiter=',')
+                # Skip header
+                next(csv_reader)
+                for task in csv_reader:
+                    self.cur.execute("select cpu_rate, assigned_memory_usage, disk_io_time from task_usage where job_id = ? and task_index = ?", (task[1], task[2]))
+                    for result in self.cur.fetchall():
+                        cpu.write("{},{},{}\n".format(str(task[1]), str(task[2]), str(result[0] * 100)))
+                        mem.write("{},{},{}\n".format(str(task[1]), str(task[2]), str(result[1] * 100)))
+                        disk.write("{},{},{}\n".format(str(task[1]), str(task[2]), str(result[2] * 100)))
+                        net.write("{},{},0.0\n".format(str(task[1]), str(task[2])))
+
+
     def is_entry_valid(self, job_id, task_index):
         self.cur.execute("select cpu_rate, assigned_memory_usage, disk_io_time from task_usage where job_id = ? and task_index = ?", (job_id, task_index))
 
@@ -197,5 +214,6 @@ if __name__ == '__main__':
         #task_usage.create_data_summary()
         #task_usage.export_summary_to_csv(SUMMARY_FILE)
         #task_usage.analyze_summary_with_r('analyze-traces.r')
-        task_usage.return_valid_tasks('filtered-cpu-29-40.csv', 'valid-entries.csv')
+        #task_usage.return_valid_tasks('filtered-cpu-29-40.csv', 'valid-entries.csv')
         #task_usage.export_traces_from_csv_r('filtered-cpu-29-40.csv', EXPORT_DIR)
+        task_usage.create_trace_summary('filtered-cpu-29-40.csv')
