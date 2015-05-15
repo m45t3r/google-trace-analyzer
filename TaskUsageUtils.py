@@ -9,8 +9,8 @@ import sqlite3
 import os
 
 PART_START = 0
-PART_END = 49
-TASK_USAGE_DIR = '../task_usage/'
+PART_END = 499
+TASK_USAGE_DIR = 'google_trace_data/task_usage/'
 DB_FILENAME = 'task_usage-part-' + str(PART_START).zfill(5) + '-of-' + str(PART_END).zfill(5) + '.sqlite3'
 EXPORT_DIR = './traces'
 SUMMARY_FILE = DB_FILENAME.split('.')[0] + '-summary.csv'
@@ -211,10 +211,10 @@ class TaskUsageUtils(object):
 
 if __name__ == '__main__':
     with TaskUsageUtils(DB_FILENAME) as task_usage:
-        #task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
-        #task_usage.create_data_summary()
-        #task_usage.export_summary_to_csv(SUMMARY_FILE)
-        #task_usage.analyze_summary_with_r('analyze-traces.r')
+        task_usage.import_data(TASK_USAGE_DIR, PART_START, PART_END)
+        task_usage.create_data_summary()
+        task_usage.export_summary_to_csv(SUMMARY_FILE)
+        task_usage.analyze_summary_with_r('analyze-traces.r')
         task_usage.return_valid_tasks('filtered-cpu-29-40.csv', 'valid-entries.csv')
         task_usage.export_traces_from_csv_r('valid-entries.csv', EXPORT_DIR)
         task_usage.create_trace_summary('filtered-cpu-29-40.csv')
